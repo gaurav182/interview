@@ -16,7 +16,44 @@ class CustomersControllerFunctionalTest extends WebTestCase
     }
 
     /*
-        test method to test the POST method Request in CustomersController    
+        test method to test the CacheService   
+        this test assumes that the cache server is empty at the moment  
+    */
+    public function testCache()
+    {
+        $cache = new CacheService('127.0.0.1', '6379', null);
+        if ($cache->isConnected()) {
+            $customers = [
+                ['_id' => 1, 'name' => 'Leandro', 'age' => 26],
+                ['_id' => 2, 'name' => 'Marcelo', 'age' => 30],
+                ['_id' => 3, 'name' => 'Alex', 'age' => 18]
+            ];
+
+            $cache->set($customers);
+            
+            $keys = $cache->get_keys('*');
+            $result = $cache->get($keys);
+
+            usort($result, function($a, $b) {
+                return $a['_id'] - $b['_id'];
+            });
+
+            $this->assertEquals($customers, $result);
+
+            $cache->delete();
+        }
+        else {
+            /* 
+                since the system is not connected with the cache server, 
+                we assert it to true to avoid warning during the test run
+            */
+            $this->assertTrue(true);
+        }
+    }
+
+    /*
+        test method to test the POST method Request in CustomersController   
+        this test assumes that the database and cache server is empty at the moment 
     */
     public function testCreateCustomers()
     {
@@ -33,7 +70,8 @@ class CustomersControllerFunctionalTest extends WebTestCase
     }
 
     /*
-        test method to test the GET method Request in CustomersController    
+        test method to test the GET method Request in CustomersController  
+        this test assumes that the database and cache server is empty at the moment   
     */
     public function testGetCustomers()
     {  
@@ -65,7 +103,8 @@ class CustomersControllerFunctionalTest extends WebTestCase
     }
 
     /*
-        test method to test the DELETE method Request in CustomersController    
+        test method to test the DELETE method Request in CustomersController  
+        this test assumes that the database and cache server is empty at the moment   
     */
     public function testDeleteCustomers()
     {
@@ -76,38 +115,5 @@ class CustomersControllerFunctionalTest extends WebTestCase
         $this->client->request('GET', '/customers/');
         $result = json_decode($this->client->getResponse()->getContent(), true); 
         $this->assertEquals($output, $result);
-    }
-
-    /*
-        test method to test the CacheService    
-    */
-    public function testCache()
-    {
-        $cache = new CacheService('127.0.0.1', '6379', null);
-        if ($cache->isConnected()) {
-            $customers = [
-                ['_id' => 1, 'name' => 'Leandro', 'age' => 26],
-                ['_id' => 2, 'name' => 'Marcelo', 'age' => 30],
-                ['_id' => 3, 'name' => 'Alex', 'age' => 18]
-            ];
-
-            $cache->set($customers);
-            
-            $keys = $cache->get_keys('*');
-            $result = $cache->get($keys);
-
-            usort($result, function($a, $b) {
-                return $a['_id'] - $b['_id'];
-            });
-
-            $this->assertEquals($customers, $result);
-        }
-        else {
-            /* 
-                since the system is not connected with the cache server, 
-                we assert it to true to avoid warning during the test run
-            */
-            $this->assertTrue(true);
-        }
     }
 }
